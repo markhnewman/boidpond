@@ -1,47 +1,44 @@
 package com.newman.boidpond
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.newman.boidpond.ui.theme.BoidpondTheme
+import android.opengl.GLES20
+import android.opengl.Matrix
+import java.util.*
+import kotlin.math.*
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            BoidpondTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
+class MainActivity : MyGLActivity() {
+    val mGame = Game(this)
+
+    val mDrawShapes = DrawShapes(this)
+
+    private val mProjectionMatrix = FloatArray(16)
+
+    private val mTimer = FrameTimer()
+
+    override fun glInit() {
+        mGame.glInit()
+
+        setRenderMode(true)
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    override fun setSize(iWidth: Int, iHeight: Int) {
+        Matrix.orthoM(mProjectionMatrix, 0, 0f, iWidth.toFloat(), 0f, iHeight.toFloat(), -1f, 1f)
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    BoidpondTheme {
-        Greeting("Android")
+        GLES20.glViewport(0, 0, iWidth, iHeight)
+
+        mGame.setSize(iWidth, iHeight)
+    }
+
+    override fun draw(iEvents: ArrayList<MyGLTouchEvent>) {
+        val dt = mTimer.seconds()
+
+        val controlEvents = ArrayList<MyGLTouchEvent>()
+        for (e in iEvents) {
+        }
+
+        GLES20.glClearColor(0.4f, 0.5f, 0.6f, 1f)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+
+        mGame.advance(dt)
+        mGame.draw(mProjectionMatrix)
     }
 }
