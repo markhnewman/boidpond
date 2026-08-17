@@ -35,7 +35,7 @@ class MainActivity : MyGLActivity() {
         for (e in iEvents) {
         }
 
-        GLES20.glClearColor(0.4f, 0.5f, 0.6f, 1f)
+        GLES20.glClearColor(0.6f, 0.8f, 1f, 1f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
         mGame.advance(dt)

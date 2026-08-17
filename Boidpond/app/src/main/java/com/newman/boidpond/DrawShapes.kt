@@ -12,6 +12,8 @@ class DrawShapes(private val mContext: Context) {
     private val kCircleResolution = 32
     private val kCircleX = FloatArray(kCircleResolution)
     private val kCircleY = FloatArray(kCircleResolution)
+    private val kFishX = ArrayList<Float>()
+    private val kFishY = ArrayList<Float>()
 
     private lateinit var mProgram: GLProgram
     private val mVertices = ArrayList<Float>()
@@ -24,6 +26,13 @@ class DrawShapes(private val mContext: Context) {
             val angle = i * 2.0 * PI / kCircleResolution
             kCircleX[i] = cos(angle).toFloat()
             kCircleY[i] = sin(angle).toFloat()
+        }
+
+        val fishX = floatArrayOf(0f, 6f, 8f, 10f, 10f, 8f, 6f)
+        val fishY = floatArrayOf(0f, 2f, 2f, 1f, -1f, -2f, -2f)
+        for (i in fishX.indices) {
+            kFishX.add((fishX[i] - 4) / 10f)
+            kFishY.add(fishY[i] / 10f)
         }
     }
 
@@ -52,15 +61,29 @@ class DrawShapes(private val mContext: Context) {
         mProgram = GLProgram(R.raw.shape_vert, R.raw.shape_frag, mContext)
     }
 
+    fun circle(x: Float, y: Float, r: Float, fill: FloatArray) {
+        val n = kCircleResolution
+
+        for (i in 0 until n) {
+            mVertices.add(x + r * kCircleX[i])
+            mVertices.add(y + r * kCircleY[i])
+            addColor(fill)
+        }
+
+        for (i in 2 until n)
+            triangleIndices(0, i - 1, i)
+        mCount += n
+    }
+
     fun circle(x: Float, y: Float, r: Float, width: Float, fill: FloatArray, border: FloatArray) {
         val radius = floatArrayOf(r - width, r - width, r)
         val color = arrayOf(fill, border, border)
         val n = kCircleResolution
 
         for (i in 0 until 3) {
-            for (j in 1 .. n) {
-                mVertices.add(x + radius[i] * kCircleX[j - 1])
-                mVertices.add(y + radius[i] * kCircleY[j - 1])
+            for (j in 0 until n) {
+                mVertices.add(x + radius[i] * kCircleX[j])
+                mVertices.add(y + radius[i] * kCircleY[j])
                 addColor(color[i])
             }
         }
@@ -94,6 +117,21 @@ class DrawShapes(private val mContext: Context) {
         }
         quadIndices(2, 5, 8, 11)
         mCount += 12
+    }
+
+    fun fish(pos: FloatArray, dir: FloatArray, length: Float, fill: FloatArray) {
+        val n = kFishX.size
+        val c = length * dir[0]
+        val s = length * dir[1]
+        for (i in 0 until n) {
+            mVertices.add(pos[0] + c * kFishX[i] - s * kFishY[i])
+            mVertices.add(pos[1] + s * kFishX[i] + c * kFishY[i])
+            addColor(fill)
+        }
+
+        for (i in 2 until n)
+            triangleIndices(0, i - 1, i)
+        mCount += n
     }
 
     fun flush(iMVPMatrix: FloatArray) {

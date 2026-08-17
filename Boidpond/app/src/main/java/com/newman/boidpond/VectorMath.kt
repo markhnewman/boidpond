@@ -155,7 +155,11 @@ fun rotate(iVec: FloatArray, iAxisX: FloatArray, iAxisY: FloatArray, iAngle: Flo
     return v + (x * c - y * s) * iAxisX + (x * s + y * c) * iAxisY
 }
 
-fun randomUnit(iDim: Int): FloatArray {
+fun zeroVec(iDim: Int): FloatArray {
+    return FloatArray(iDim)
+}
+
+fun randomUnitVec(iDim: Int): FloatArray {
     while (true) {
         val unit = FloatArray(iDim)
         var r = 0f
