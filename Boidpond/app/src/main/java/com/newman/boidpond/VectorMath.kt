@@ -159,20 +159,41 @@ fun zeroVec(iDim: Int): FloatArray {
     return FloatArray(iDim)
 }
 
+fun randomSquareVec(iDim: Int): FloatArray {
+    val vec = FloatArray(iDim)
+    for (i in vec.indices)
+        vec[i] = Random.nextDouble(-1.0, 1.0).toFloat()
+    return vec
+}
+
+fun randomCircleVec(iDim: Int): FloatArray {
+    while (true) {
+        val vec = FloatArray(iDim)
+        var r = 0f
+        for (i in vec.indices) {
+            vec[i] = Random.nextDouble(-1.0, 1.0).toFloat()
+            r += vec[i] * vec[i]
+        }
+        if (r < 1f) {
+            return vec
+        }
+    }
+}
+
 fun randomUnitVec(iDim: Int): FloatArray {
     while (true) {
-        val unit = FloatArray(iDim)
+        val vec = FloatArray(iDim)
         var r = 0f
-        for (i in unit.indices) {
-            unit[i] = Random.nextDouble(-1.0, 1.0).toFloat()
-            r += unit[i] * unit[i]
+        for (i in vec.indices) {
+            vec[i] = Random.nextDouble(-1.0, 1.0).toFloat()
+            r += vec[i] * vec[i]
         }
         if (r < 1f) {
             r = sqrt(r)
-            for (i in unit.indices) {
-                unit[i] /= r
+            for (i in vec.indices) {
+                vec[i] /= r
             }
-            return unit
+            return vec
         }
     }
 }

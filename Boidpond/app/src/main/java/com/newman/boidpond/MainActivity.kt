@@ -33,6 +33,7 @@ class MainActivity : MyGLActivity() {
 
         val controlEvents = ArrayList<MyGLTouchEvent>()
         for (e in iEvents) {
+            mGame.touch(e.x, e.y)
         }
 
         GLES20.glClearColor(0.6f, 0.8f, 1f, 1f)

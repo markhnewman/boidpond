@@ -6,14 +6,16 @@ import kotlin.math.*
 import kotlin.random.Random
 
 class Game(private val mContext: Context) {
-    private data class Boid(var pos: FloatArray, var vel: FloatArray)
-    private data class Obstacle(var pos: FloatArray, var r: Float)
+    private data class Boid(var pos: FloatArray, var vel: FloatArray, var color: FloatArray)
+    private data class Obstacle(var pos: FloatArray, var r: Float, var color: FloatArray)
 
     private val mDrawShapes = DrawShapes(mContext)
 
     private val mSmallBoids = ArrayList<Boid>()
     private val mBigBoids = ArrayList<Boid>()
     private val mObstacles = ArrayList<Obstacle>()
+    private val kMoveObstacles = 50
+    private var mCurrObstacle = 0
 
     private val kGridSize = 200f
     private var mGridWidth = 0
@@ -27,39 +29,52 @@ class Game(private val mContext: Context) {
         mGridHeight = ceil(height / kGridSize).toInt()
 
         val spacing = 100f
-        val smallCount = 100
+        val smallCount = 200
         val bigCount = 10
 
         val w = (width.toFloat() / spacing).toInt()
         val h = (height.toFloat() / spacing).toInt()
 
-        for (x in 0 .. w) {
-            mObstacles.add(Obstacle(
-                floatArrayOf(spacing * x.toFloat(), 0.5f * spacing * Random.nextFloat()),
-                spacing * (0.75f + 0.75f * Random.nextFloat())
-            ))
-            mObstacles.add(Obstacle(
-                floatArrayOf(spacing * x.toFloat(), height - 0.5f * spacing * Random.nextFloat()),
-                spacing * (0.75f + 0.75f * Random.nextFloat())
-            ))
-        }
-        for (y in 1 until h) {
-            mObstacles.add(Obstacle(
-                floatArrayOf(0.5f * spacing * Random.nextFloat(), spacing * y.toFloat()),
-                spacing * (0.75f + 0.75f * Random.nextFloat())
-            ))
-            mObstacles.add(Obstacle(
-                floatArrayOf(width - 0.5f * spacing * Random.nextFloat(), spacing * y.toFloat()),
-                spacing * (0.75f + 0.75f * Random.nextFloat())
-            ))
-        }
-
-        for (i in 0 until 10) {
+        mCurrObstacle = 10
+        for (i in 0 until mCurrObstacle) {
             mObstacles.add(Obstacle(
                 floatArrayOf(width * Random.nextFloat(), height * Random.nextFloat()),
-                spacing * (0.5f + 0.5f * Random.nextFloat())
+                spacing * (0.5f + 0.5f * Random.nextFloat()),
+                floatArrayOf(0.4f * Random.nextFloat(), 0.6f, 0f)
             ))
         }
+        for (i in mCurrObstacle until kMoveObstacles)
+            mObstacles.add(Obstacle(
+                floatArrayOf( -width.toFloat(), -height.toFloat()),
+                0f,
+                floatArrayOf(0.4f * Random.nextFloat(), 0.6f, 0f)
+            ))
+
+        for (x in 0 .. w) {
+            mObstacles.add(Obstacle(
+                floatArrayOf(spacing * x.toFloat(), -0.5f * spacing * Random.nextFloat()),
+                spacing * (0.75f + 0.75f * Random.nextFloat()),
+                floatArrayOf(0.4f * Random.nextFloat(), 0.6f, 0f)
+            ))
+            mObstacles.add(Obstacle(
+                floatArrayOf(spacing * x.toFloat(), height + 0.5f * spacing * Random.nextFloat()),
+                spacing * (0.75f + 0.75f * Random.nextFloat()),
+                floatArrayOf(0.4f * Random.nextFloat(), 0.6f, 0f)
+            ))
+        }
+        for (y in 0 .. h) {
+            mObstacles.add(Obstacle(
+                floatArrayOf(-0.5f * spacing * Random.nextFloat(), spacing * y.toFloat()),
+                spacing * (0.75f + 0.75f * Random.nextFloat()),
+                floatArrayOf(0.4f * Random.nextFloat(), 0.6f, 0f)
+            ))
+            mObstacles.add(Obstacle(
+                floatArrayOf(width + 0.5f * spacing * Random.nextFloat(), spacing * y.toFloat()),
+                spacing * (0.75f + 0.75f * Random.nextFloat()),
+                floatArrayOf(0.4f * Random.nextFloat(), 0.6f, 0f)
+            ))
+        }
+        mObstacles.subList(kMoveObstacles, mObstacles.size).shuffle(Random)
 
         for (i in 0 until smallCount) {
             var good = false
@@ -70,7 +85,7 @@ class Game(private val mContext: Context) {
                 for (j in mObstacles.indices)
                     good = good and (distanceSquared(pos, mObstacles[j].pos) > mObstacles[j].r * mObstacles[j].r)
             }
-            mSmallBoids.add(Boid(pos, randomUnitVec(2)))
+            mSmallBoids.add(Boid(pos, randomUnitVec(2), floatArrayOf(0.4f + 0.3f * Random.nextFloat(), 0.2f, 0f)))
         }
 
         for (i in 0 until bigCount) {
@@ -82,12 +97,35 @@ class Game(private val mContext: Context) {
                 for (j in mObstacles.indices)
                     good = good and (distanceSquared(pos, mObstacles[j].pos) > mObstacles[j].r * mObstacles[j].r)
             }
-            mBigBoids.add(Boid(pos, randomUnitVec(2)))
+            mBigBoids.add(Boid(pos, randomUnitVec(2), floatArrayOf(0.8f, 0.4f + 0.3f * Random.nextFloat(), 0f)))
         }
     }
 
     fun glInit() {
         mDrawShapes.glInit()
+    }
+
+    fun touch(x: FloatArray, y: FloatArray) {
+        for (i in x.indices) {
+            val touchPos = floatArrayOf(x[i], y[i])
+            for (j in 0 until 20) {
+                val pos = touchPos + 50f * randomCircleVec(2)
+                val r = 75f * (0.5f + 0.5f * Random.nextFloat())
+
+                var good = true
+                for (o in mObstacles) {
+                    val sq = distanceSquared(pos, o.pos)
+                    good = good and (sq > max(r * r, o.r * o.r))
+                }
+
+                if (good) {
+                    mObstacles[mCurrObstacle].pos = pos
+                    mObstacles[mCurrObstacle].r = r
+                    mCurrObstacle = (mCurrObstacle + 1).mod(kMoveObstacles)
+                    break
+                }
+            }
+        }
     }
 
     fun advance(dt: Float) {
@@ -99,8 +137,12 @@ class Game(private val mContext: Context) {
         for (boid in mSmallBoids) {
             val x = floor(boid.pos[0] / kGridSize).toInt()
             val y = floor(boid.pos[1] / kGridSize).toInt()
+            if (x < 0 || x >= mGridWidth || y < 0 || y >= mGridHeight) {
+                smallAccel.add(zeroVec(2))
+                continue
+            }
             var acc = maintainSpeed(3f, 1f, boid)
-            acc += avoidObstacles(50f, 0.2f, boid, mObstacleGrid[x][y])
+            acc += avoidObstacles(50f, 0.2f, 20f, boid, mObstacleGrid[x][y])
             acc += avoidBoids(50f, 0.2f, boid, mSmallBoidGrid[x][y])
             acc += avoidBoids(150f, 0.2f, boid, mBigBoidGrid[x][y])
             acc += averageNeighbor(200f, 0.005f, 2f, boid, mSmallBoidGrid[x][y])
@@ -111,10 +153,14 @@ class Game(private val mContext: Context) {
         for (boid in mBigBoids) {
             val x = floor(boid.pos[0] / kGridSize).toInt()
             val y = floor(boid.pos[1] / kGridSize).toInt()
+            if (x < 0 || x >= mGridWidth || y < 0 || y >= mGridHeight) {
+                smallAccel.add(zeroVec(2))
+                continue
+            }
             var acc = maintainSpeed(3f, 1f, boid)
-            acc += avoidObstacles(100f, 0.1f, boid, mObstacleGrid[x][y])
+            acc += avoidObstacles(100f, 0.04f, 20f, boid, mObstacleGrid[x][y])
             acc += avoidBoids(100f, 0.1f, boid, mBigBoidGrid[x][y])
-            acc += averageNeighbor(200f, 0f, 1f, boid, mBigBoidGrid[x][y])
+            acc += averageNeighbor(200f, 0f, 0.5f, boid, mBigBoidGrid[x][y])
             bigAccel.add(acc)
         }
 
@@ -129,17 +175,17 @@ class Game(private val mContext: Context) {
     }
 
     fun draw(iMVPMatrix: FloatArray) {
-        for (i in mObstacles.indices) {
-            mDrawShapes.circle(mObstacles[i].pos[0], mObstacles[i].pos[1], mObstacles[i].r, floatArrayOf(0f, 0f, 0f))
+        for (o in mObstacles) {
+            mDrawShapes.circle(o.pos[0], o.pos[1], o.r, floatArrayOf(0f, 0f, 0f))
         }
-        for (i in mObstacles.indices) {
-            mDrawShapes.circle(mObstacles[i].pos[0], mObstacles[i].pos[1], mObstacles[i].r - 10f, floatArrayOf(0f, 0.8f, 0f))
+        for (o in mObstacles) {
+            mDrawShapes.circle(o.pos[0], o.pos[1], o.r - 10f, o.color)
         }
         for (b in mSmallBoids) {
-            mDrawShapes.fish(b.pos, b.vel.normalize(), 30f, floatArrayOf(0.5f, 0.4f, 0f))
+            mDrawShapes.fish(b.pos, b.vel.normalize(), 30f, b.color)
         }
         for (b in mBigBoids) {
-            mDrawShapes.fish(b.pos, b.vel.normalize(), 60f, floatArrayOf(0.5f, 0.4f, 0f))
+            mDrawShapes.fish(b.pos, b.vel.normalize(), 60f, b.color)
         }
 
         mDrawShapes.flush(iMVPMatrix)
@@ -192,14 +238,16 @@ class Game(private val mContext: Context) {
         return gain * (target - l) * boid.vel / l
     }
 
-    private fun avoidObstacles(dist: Float, repulse: Float, boid: Boid, obstacles: ArrayList<Obstacle>): FloatArray {
+    private fun avoidObstacles(dist: Float, repulse: Float, inverse: Float, boid: Boid, obstacles: ArrayList<Obstacle>): FloatArray {
         var acc = zeroVec(2)
         for (o in obstacles) {
             val dir = boid.pos - o.pos
             val r = dir.length()
             val f = o.r + dist - r
-            if (f > 0f)
-                acc += repulse * dir * f / r
+            if (f > 0f) {
+                val i = max(r - o.r,0.5f)
+                acc += (repulse * f + inverse / i) * dir / r
+            }
         }
         return acc
     }
