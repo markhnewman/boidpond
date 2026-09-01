@@ -31,7 +31,7 @@ class DrawShapes(private val mContext: Context) {
         val fishX = floatArrayOf(0f, 6f, 8f, 10f, 10f, 8f, 6f)
         val fishY = floatArrayOf(0f, 2f, 2f, 1f, -1f, -2f, -2f)
         for (i in fishX.indices) {
-            kFishX.add((fishX[i] - 4) / 10f)
+            kFishX.add((fishX[i] - 5f) / 10f)
             kFishY.add(fishY[i] / 10f)
         }
     }

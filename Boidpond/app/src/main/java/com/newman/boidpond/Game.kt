@@ -1,6 +1,7 @@
 package com.newman.boidpond
 
 import android.content.Context
+import android.opengl.Matrix
 import kotlin.collections.ArrayList
 import kotlin.math.*
 import kotlin.random.Random
@@ -31,6 +32,7 @@ class Game(private val mContext: Context) {
     )
 
     private val mDrawShapes = DrawShapes(mContext)
+    private val mDrawFish = DrawFish(mContext)
     private var mWidth = 0
     private var mHeight = 0
 
@@ -60,10 +62,15 @@ class Game(private val mContext: Context) {
         mGridHeight = ceil(height / kGridSize).toInt()
 
         val spacing = 100f
-        val smallCount = 1000//300
-        val mediumCount = 0//50
-        val bigCount = 5//10
-        var lilypadCount = 0
+        val smallCount = 300
+        val mediumCount = 50
+        val bigCount = 10
+        val lilypadCount = 0
+/*
+        val smallCount = 1000
+        val mediumCount = 0
+        val bigCount = 5
+*/
 
         val w = (width.toFloat() / spacing).toInt()
         val h = (height.toFloat() / spacing).toInt()
@@ -151,6 +158,7 @@ class Game(private val mContext: Context) {
 
     fun glInit() {
         mDrawShapes.glInit()
+        mDrawFish.glInit()
     }
 
     fun touch(x: FloatArray, y: FloatArray) {
@@ -276,17 +284,19 @@ class Game(private val mContext: Context) {
         for (l in mLilypads) {
             mDrawShapes.circle(l.pos[0], l.pos[1], l.r, l.color)
         }
+        mDrawShapes.flush(iMVPMatrix)
+
+        mDrawFish.start(iMVPMatrix)
         for (b in mSmallBoids) {
-            mDrawShapes.fish(b.pos, b.vel.normalize(), 20f, b.color)
+            mDrawFish.draw(b.pos, b.vel.normalize(), 30f, b.color)
         }
         for (b in mMediumBoids) {
-            mDrawShapes.fish(b.pos, b.vel.normalize(), 40f, b.color)
+            mDrawFish.draw(b.pos, b.vel.normalize(), 50f, b.color)
         }
         for (b in mBigBoids) {
-            mDrawShapes.fish(b.pos, b.vel.normalize(), 70f, b.color)
+            mDrawFish.draw(b.pos, b.vel.normalize(), 100f, b.color)
         }
-
-        mDrawShapes.flush(iMVPMatrix)
+        mDrawFish.finish()
     }
 
     private fun newBoid(width: Int, height: Int, grid: ArrayList<ArrayList<ArrayList<Obstacle>>>): FloatArray {
