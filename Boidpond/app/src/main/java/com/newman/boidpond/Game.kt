@@ -33,8 +33,10 @@ class Game(private val mContext: Context) {
 
     private val mDrawShapes = DrawShapes(mContext)
     private val mDrawFish = DrawFish(mContext)
+    private val mDrawTest = DrawTest(mContext)
     private var mWidth = 0
     private var mHeight = 0
+    private var mTime = 0f
 
     private val mSmallBoids = ArrayList<Boid>()
     private val mMediumBoids = ArrayList<Boid>()
@@ -159,6 +161,7 @@ class Game(private val mContext: Context) {
     fun glInit() {
         mDrawShapes.glInit()
         mDrawFish.glInit()
+        mDrawTest.glInit()
     }
 
     fun touch(x: FloatArray, y: FloatArray) {
@@ -187,6 +190,8 @@ class Game(private val mContext: Context) {
 
     fun advance(iDt: Float) {
         val dt = min(iDt, 0.1f)
+        mTime += dt
+
         gridMoveable(mSmallBoids, mSmallBoidGrid)
         gridMoveable(mMediumBoids, mMediumBoidGrid)
         gridMoveable(mBigBoids, mBigBoidGrid)
@@ -297,6 +302,10 @@ class Game(private val mContext: Context) {
             mDrawFish.draw(b.pos, b.vel.normalize(), 100f, b.color)
         }
         mDrawFish.finish()
+
+        mDrawTest.start(iMVPMatrix)
+        mDrawTest.draw(floatArrayOf(0.5f * mWidth, 0.5f * mHeight), 400f, sin(0.5f * mTime).pow(3f), 0.6f, 1.0f * mTime)
+        mDrawTest.finish()
     }
 
     private fun newBoid(width: Int, height: Int, grid: ArrayList<ArrayList<ArrayList<Obstacle>>>): FloatArray {

@@ -7,11 +7,13 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.*
 
-class DrawFish(private val mContext: Context) {
+class DrawTest(private val mContext: Context) {
 
     private lateinit var mProgram: GLProgram
     private var mMatrixLoc = 0
-    private var mColorLoc = 0
+    private var mTurnLoc = 0
+    private var mSwimLoc = 0
+    private var mAnimLoc = 0
     private var mPositionLoc = 0
     private var mVertexBuffer = 0
     private var mElementBuffer = 0
@@ -22,27 +24,20 @@ class DrawFish(private val mContext: Context) {
     private val mIndices = ArrayList<Int>()
 
     init {
-        val n = 6
+        val n = 8
         val dx = 1f / n.toFloat()
 
-        mVertices.add(-0.5f)
-        mVertices.add(0f)
-        for (i in 1 until n) {
-            val x = 1f - (1f - i * dx).pow(2f)
-            val y = 0.3f * x * sqrt(1f - x)
-            mVertices.add(x - 0.5f)
+        for (i in 0 .. n) {
+            val x = i * dx
+            val y = 0.25f
+            mVertices.add(x - 0.75f)
             mVertices.add(y)
-            mVertices.add(x - 0.5f)
+            mVertices.add(x - 0.75f)
             mVertices.add(-y)
         }
-        mVertices.add(0.5f)
-        mVertices.add(0f)
 
-        mIndices.add(0)
-        mIndices.add(1)
-        mIndices.add(2)
-        for (i in 1 until n - 1) {
-            val j = 2 * i - 1
+        for (i in 0 until n) {
+            val j = 2 * i
             mIndices.add(j)
             mIndices.add(j + 1)
             mIndices.add(j + 3)
@@ -50,13 +45,10 @@ class DrawFish(private val mContext: Context) {
             mIndices.add(j + 2)
             mIndices.add(j + 3)
         }
-        mIndices.add(2 * n - 1)
-        mIndices.add(2 * n - 2)
-        mIndices.add(2 * n - 3)
     }
 
     fun glInit() {
-        mProgram = GLProgram(R.raw.fish_vert, R.raw.fish_frag, mContext)
+        mProgram = GLProgram(R.raw.test_vert, R.raw.test_frag, mContext)
 
         val buffers = IntArray(2)
         GLES20.glGenBuffers(2, buffers, 0)
@@ -68,7 +60,9 @@ class DrawFish(private val mContext: Context) {
         mMVPMatrix = iMVPMatrix
         mProgram.use()
         mMatrixLoc = mProgram.uniformLocation("uMVPMatrix")
-        mColorLoc = mProgram.uniformLocation("uColor")
+        mTurnLoc = mProgram.uniformLocation("uTurn")
+        mSwimLoc = mProgram.uniformLocation("uSwim")
+        mAnimLoc = mProgram.uniformLocation("uAnim")
         mPositionLoc = mProgram.attribLocation("aPosition")
 
         val vertexSize = mVertices.size * 4
@@ -95,19 +89,15 @@ class DrawFish(private val mContext: Context) {
         GLES20.glVertexAttribPointer(mPositionLoc, 2, GLES20.GL_FLOAT, false, 2 * 4, 0)
     }
 
-    fun draw(pos: FloatArray, dir: FloatArray, length: Float, fill: FloatArray) {
+    fun draw(pos: FloatArray, size: Float, turn: Float, swim: Float, anim: Float) {
         val matrix = FloatArray(16)
         Matrix.translateM(matrix, 0, mMVPMatrix, 0, pos[0], pos[1], 0f)
-
-        val d = length * dir
-        val dirMatrix = floatArrayOf(d[0],  d[1], 0f, 0f,
-                                     -d[1], d[0], 0f, 0f,
-                                     0f,    0f,     1f, 0f,
-                                     0f,    0f,     0f, 1f)
-        Matrix.multiplyMM(matrix, 0, matrix, 0, dirMatrix, 0)
+        Matrix.scaleM(matrix, 0, size, size, 1f)
 
         GLES20.glUniformMatrix4fv(mMatrixLoc, 1, false, matrix, 0)
-        GLES20.glUniform4f(mColorLoc, fill[0], fill[1], fill[2], 1f)
+        GLES20.glUniform1f(mTurnLoc, turn)
+        GLES20.glUniform1f(mSwimLoc, swim)
+        GLES20.glUniform1f(mAnimLoc, anim)
 
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, mIndices.size, GLES20.GL_UNSIGNED_SHORT, 0)
     }
