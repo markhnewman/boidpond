@@ -12,6 +12,9 @@ class DrawFish(private val mContext: Context) {
     private lateinit var mProgram: GLProgram
     private var mMatrixLoc = 0
     private var mColorLoc = 0
+    private var mTurnLoc = 0
+    private var mSwimLoc = 0
+    private var mAnimLoc = 0
     private var mPositionLoc = 0
     private var mVertexBuffer = 0
     private var mElementBuffer = 0
@@ -25,17 +28,17 @@ class DrawFish(private val mContext: Context) {
         val n = 6
         val dx = 1f / n.toFloat()
 
-        mVertices.add(-0.5f)
+        mVertices.add(-0.75f)
         mVertices.add(0f)
         for (i in 1 until n) {
             val x = 1f - (1f - i * dx).pow(2f)
             val y = 0.3f * x * sqrt(1f - x)
-            mVertices.add(x - 0.5f)
+            mVertices.add(x - 0.75f)
             mVertices.add(y)
-            mVertices.add(x - 0.5f)
+            mVertices.add(x - 0.75f)
             mVertices.add(-y)
         }
-        mVertices.add(0.5f)
+        mVertices.add(0.25f)
         mVertices.add(0f)
 
         mIndices.add(0)
@@ -69,6 +72,9 @@ class DrawFish(private val mContext: Context) {
         mProgram.use()
         mMatrixLoc = mProgram.uniformLocation("uMVPMatrix")
         mColorLoc = mProgram.uniformLocation("uColor")
+        mTurnLoc = mProgram.uniformLocation("uTurn")
+        mSwimLoc = mProgram.uniformLocation("uSwim")
+        mAnimLoc = mProgram.uniformLocation("uAnim")
         mPositionLoc = mProgram.attribLocation("aPosition")
 
         val vertexSize = mVertices.size * 4
@@ -95,10 +101,11 @@ class DrawFish(private val mContext: Context) {
         GLES20.glVertexAttribPointer(mPositionLoc, 2, GLES20.GL_FLOAT, false, 2 * 4, 0)
     }
 
-    fun draw(pos: FloatArray, dir: FloatArray, length: Float, fill: FloatArray) {
+    fun draw(fish: Boid, length: Float) {
         val matrix = FloatArray(16)
-        Matrix.translateM(matrix, 0, mMVPMatrix, 0, pos[0], pos[1], 0f)
+        Matrix.translateM(matrix, 0, mMVPMatrix, 0, fish.pos[0], fish.pos[1], 0f)
 
+        val dir = fish.vel.normalize()
         val d = length * dir
         val dirMatrix = floatArrayOf(d[0],  d[1], 0f, 0f,
                                      -d[1], d[0], 0f, 0f,
@@ -107,7 +114,10 @@ class DrawFish(private val mContext: Context) {
         Matrix.multiplyMM(matrix, 0, matrix, 0, dirMatrix, 0)
 
         GLES20.glUniformMatrix4fv(mMatrixLoc, 1, false, matrix, 0)
-        GLES20.glUniform4f(mColorLoc, fill[0], fill[1], fill[2], 1f)
+        GLES20.glUniform1f(mTurnLoc, fish.turn)
+        GLES20.glUniform1f(mSwimLoc, fish.swim)
+        GLES20.glUniform1f(mAnimLoc, fish.anim)
+        GLES20.glUniform4f(mColorLoc, fish.color[0], fish.color[1], fish.color[2], 1f)
 
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, mIndices.size, GLES20.GL_UNSIGNED_SHORT, 0)
     }

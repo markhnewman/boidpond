@@ -75,7 +75,11 @@ fun dot(iLhs: FloatArray, iRhs: FloatArray): Float {
     return r
 }
 
-fun cross(iLhs: FloatArray, iRhs: FloatArray): FloatArray {
+fun cross2D(iLhs: FloatArray, iRhs: FloatArray): Float {
+    return iLhs[0] * iRhs[1] - iLhs[1] * iRhs[0]
+}
+
+fun cross3D(iLhs: FloatArray, iRhs: FloatArray): FloatArray {
     return floatArrayOf(
         iLhs[1] * iRhs[2] - iLhs[2] * iRhs[1],
         iLhs[2] * iRhs[0] - iLhs[0] * iRhs[2],

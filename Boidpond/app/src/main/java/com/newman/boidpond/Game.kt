@@ -1,36 +1,11 @@
 package com.newman.boidpond
 
 import android.content.Context
-import android.opengl.Matrix
 import kotlin.collections.ArrayList
 import kotlin.math.*
 import kotlin.random.Random
 
 class Game(private val mContext: Context) {
-    private interface Moveable {
-        var pos: FloatArray
-        var vel: FloatArray
-    }
-
-    private data class Boid(
-        override var pos: FloatArray,
-        override var vel: FloatArray,
-        var color: FloatArray
-    ) : Moveable
-
-    private data class Lilypad(
-        override var pos: FloatArray,
-        override var vel: FloatArray,
-        var r: Float,
-        var color: FloatArray
-    ) : Moveable
-
-    private data class Obstacle(
-        var pos: FloatArray,
-        var r: Float,
-        var color: FloatArray
-    )
-
     private val mDrawShapes = DrawShapes(mContext)
     private val mDrawFish = DrawFish(mContext)
     private val mDrawTest = DrawTest(mContext)
@@ -42,7 +17,6 @@ class Game(private val mContext: Context) {
     private val mMediumBoids = ArrayList<Boid>()
     private val mBigBoids = ArrayList<Boid>()
     private val mObstacles = ArrayList<Obstacle>()
-    private val mLilypads = ArrayList<Lilypad>()
     private val kMoveObstacles = 50
     private var mCurrObstacle = 0
 
@@ -53,7 +27,6 @@ class Game(private val mContext: Context) {
     private val mMediumBoidGrid = ArrayList<ArrayList<ArrayList<Boid>>>()
     private val mBigBoidGrid = ArrayList<ArrayList<ArrayList<Boid>>>()
     private val mObstacleGrid = ArrayList<ArrayList<ArrayList<Obstacle>>>()
-    private val mLilypadGrid = ArrayList<ArrayList<ArrayList<Lilypad>>>()
 
     fun setSize(width: Int, height: Int) {
         if (width == mWidth && height == mHeight) return
@@ -67,7 +40,6 @@ class Game(private val mContext: Context) {
         val smallCount = 300
         val mediumCount = 50
         val bigCount = 10
-        val lilypadCount = 0
 /*
         val smallCount = 1000
         val mediumCount = 0
@@ -145,17 +117,6 @@ class Game(private val mContext: Context) {
                 mix(floatArrayOf(0.9f, 0.7f, 0f), floatArrayOf(1f, 0.9f, 0.6f), Random.nextFloat())
             ))
         }
-
-        mLilypads.clear()
-        for (i in 0 until lilypadCount) {
-            mLilypads.add(Lilypad(
-                newBoid(width, height, mObstacleGrid),
-                zeroVec(2),
-                spacing * (0.25f + 0.15f * Random.nextFloat()),
-                //floatArrayOf(0.2f * Random.nextFloat(), 0.4f, 0f)
-                floatArrayOf(0.3f + 0.1f * Random.nextFloat(), 0.5f, 0.5f)
-            ))
-        }
     }
 
     fun glInit() {
@@ -192,10 +153,9 @@ class Game(private val mContext: Context) {
         val dt = min(iDt, 0.1f)
         mTime += dt
 
-        gridMoveable(mSmallBoids, mSmallBoidGrid)
-        gridMoveable(mMediumBoids, mMediumBoidGrid)
-        gridMoveable(mBigBoids, mBigBoidGrid)
-        gridMoveable(mLilypads, mLilypadGrid)
+        gridBoids(mSmallBoids, mSmallBoidGrid)
+        gridBoids(mMediumBoids, mMediumBoidGrid)
+        gridBoids(mBigBoids, mBigBoidGrid)
         gridObstacles(mObstacles, mObstacleGrid)
 
         val smallAccel = ArrayList<FloatArray>()
@@ -247,35 +207,20 @@ class Game(private val mContext: Context) {
             bigAccel.add(acc)
         }
 
-        val lilypadAccel = ArrayList<FloatArray>()
-        for (lilypad in mLilypads) {
-            val x = floor(lilypad.pos[0] / kGridSize).toInt()
-            val y = floor(lilypad.pos[1] / kGridSize).toInt()
-            if (x < 0 || x >= mGridWidth || y < 0 || y >= mGridHeight) {
-                lilypadAccel.add(zeroVec(2))
-                continue
-            }
-            var acc = capSpeed(3f, 0.1f, lilypad)
-            acc += avoidObstacles(lilypad.r, 0.04f, 20f, lilypad, mObstacleGrid[x][y])
-            acc += avoidLilypads(0.1f, 1f, lilypad, mLilypadGrid[x][y])
-            lilypadAccel.add(acc)
-        }
-
         for (i in mSmallBoids.indices) {
             mSmallBoids[i].vel += dt * smallAccel[i]
             mSmallBoids[i].pos += dt * 100f * mSmallBoids[i].vel
+            animate(mSmallBoids[i], dt, 1f)
         }
         for (i in mMediumBoids.indices) {
             mMediumBoids[i].vel += dt * mediumAccel[i]
             mMediumBoids[i].pos += dt * 100f * mMediumBoids[i].vel
+            animate(mMediumBoids[i], dt, 0.75f)
         }
         for (i in mBigBoids.indices) {
             mBigBoids[i].vel += dt * bigAccel[i]
             mBigBoids[i].pos += dt * 100f * mBigBoids[i].vel
-        }
-        for (i in mLilypads.indices) {
-            mLilypads[i].vel += dt * lilypadAccel[i]
-            mLilypads[i].pos += dt * 100f * mLilypads[i].vel
+            animate(mBigBoids[i], dt, 0.5f)
         }
     }
 
@@ -286,26 +231,23 @@ class Game(private val mContext: Context) {
         for (o in mObstacles) {
             mDrawShapes.circle(o.pos[0], o.pos[1], o.r - 10f, o.color)
         }
-        for (l in mLilypads) {
-            mDrawShapes.circle(l.pos[0], l.pos[1], l.r, l.color)
-        }
         mDrawShapes.flush(iMVPMatrix)
 
         mDrawFish.start(iMVPMatrix)
         for (b in mSmallBoids) {
-            mDrawFish.draw(b.pos, b.vel.normalize(), 30f, b.color)
+            mDrawFish.draw(b, 30f)
         }
         for (b in mMediumBoids) {
-            mDrawFish.draw(b.pos, b.vel.normalize(), 50f, b.color)
+            mDrawFish.draw(b, 50f)
         }
         for (b in mBigBoids) {
-            mDrawFish.draw(b.pos, b.vel.normalize(), 100f, b.color)
+            mDrawFish.draw(b, 100f)
         }
         mDrawFish.finish()
 
-        mDrawTest.start(iMVPMatrix)
+        /*mDrawTest.start(iMVPMatrix)
         mDrawTest.draw(floatArrayOf(0.5f * mWidth, 0.5f * mHeight), 400f, sin(0.5f * mTime).pow(3f), 0.6f, 1.0f * mTime)
-        mDrawTest.finish()
+        mDrawTest.finish()*/
     }
 
     private fun newBoid(width: Int, height: Int, grid: ArrayList<ArrayList<ArrayList<Obstacle>>>): FloatArray {
@@ -341,17 +283,17 @@ class Game(private val mContext: Context) {
         }
     }
 
-    private fun <T : Moveable> gridMoveable(list: ArrayList<T>, grid: ArrayList<ArrayList<ArrayList<T>>>) {
+    private fun gridBoids(boids: ArrayList<Boid>, grid: ArrayList<ArrayList<ArrayList<Boid>>>) {
         grid.clear()
         for (i in 0 until mGridWidth) {
-            val col = ArrayList<ArrayList<T>>()
+            val col = ArrayList<ArrayList<Boid>>()
             for (j in 0 until mGridHeight)
-                col.add(ArrayList<T>())
+                col.add(ArrayList<Boid>())
             grid.add(col)
         }
 
-        for (i in list.indices) {
-            val b = list[i]
+        for (i in boids.indices) {
+            val b = boids[i]
             val left = max(floor(b.pos[0] / kGridSize).toInt() - 1, 0)
             val right = min(floor(b.pos[0] / kGridSize).toInt() + 2, mGridWidth)
             val bottom = max(floor(b.pos[1] / kGridSize).toInt() - 1, 0)
@@ -362,18 +304,18 @@ class Game(private val mContext: Context) {
         }
     }
 
-    private fun maintainSpeed(gain: Float, target: Float, self: Moveable): FloatArray {
+    private fun maintainSpeed(gain: Float, target: Float, self: Boid): FloatArray {
         val l = self.vel.length()
         return gain * (target - l) * self.vel / l
     }
 
-    private fun capSpeed(gain: Float, target: Float, self: Moveable): FloatArray {
+    private fun capSpeed(gain: Float, target: Float, self: Boid): FloatArray {
         val l = self.vel.length()
         if (l < target) return zeroVec(self.vel.size)
         return gain * (target - l) * self.vel / l
     }
 
-    private fun avoidObstacles(dist: Float, repulse: Float, inverse: Float, self: Moveable, obstacles: ArrayList<Obstacle>): FloatArray {
+    private fun avoidObstacles(dist: Float, repulse: Float, inverse: Float, self: Boid, obstacles: ArrayList<Obstacle>): FloatArray {
         var acc = zeroVec(2)
         for (o in obstacles) {
             val dir = self.pos - o.pos
@@ -396,22 +338,6 @@ class Game(private val mContext: Context) {
                 val f = dist - r
                 if (f > 0f)
                     acc += repulse * dir * f / r
-            }
-        }
-        return acc
-    }
-
-    private fun avoidLilypads(repulse: Float, damp: Float, self: Lilypad, lilypads: ArrayList<Lilypad>): FloatArray {
-        var acc = zeroVec(2)
-        for (l in lilypads) {
-            if (l !== self) {
-                val dir = self.pos - l.pos
-                val r = dir.length()
-                val f = self.r + l.r - r
-                if (f > 0f) {
-                    acc += repulse * dir * f / r
-                    acc += damp * (l.vel - self.vel)
-                }
             }
         }
         return acc
@@ -450,5 +376,19 @@ class Game(private val mContext: Context) {
         }
 
         return acc
+    }
+
+    private fun animate(boid: Boid, dt: Float, swim: Float) {
+        val speed = 1.0f * exp(boid.vel.length())
+        boid.anim = (boid.anim + swim * speed * dt) % 1f
+        boid.swim = 0.3f * speed
+
+        val dir = boid.vel.normalize()
+        val turn = -10f * cross2D(dir, boid.prevVel)
+        boid.turn += (turn - boid.turn) * (1f - exp(-5f * dt))
+        boid.prevVel = dir
+
+        boid.turn = max(min(boid.turn, 4f), -4f)
+        boid.swim = min(boid.swim, 2f)
     }
 }
