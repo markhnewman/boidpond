@@ -28,6 +28,9 @@ class Game(private val mContext: Context) {
     private val mBigBoidGrid = ArrayList<ArrayList<ArrayList<Boid>>>()
     private val mObstacleGrid = ArrayList<ArrayList<ArrayList<Obstacle>>>()
 
+    private val mJumpCos = 1.1f * cos(2.4f)
+    private val mJumpSin = 1.1f * sin(2.4f)
+
     fun setSize(width: Int, height: Int) {
         if (width == mWidth && height == mHeight) return
         mWidth = width
@@ -166,6 +169,11 @@ class Game(private val mContext: Context) {
                 smallAccel.add(zeroVec(2))
                 continue
             }
+            if (intersect(boid.pos, mObstacleGrid[x][y])) {
+                jump(boid)
+                smallAccel.add(zeroVec(2))
+                continue
+            }
             var acc = maintainSpeed(3f, 1f, boid)
             acc += avoidObstacles(40f, 0.2f, 20f, boid, mObstacleGrid[x][y])
             acc += avoidBoids(40f, 0.2f, boid, mSmallBoidGrid[x][y])
@@ -183,8 +191,13 @@ class Game(private val mContext: Context) {
                 mediumAccel.add(zeroVec(2))
                 continue
             }
+            if (intersect(boid.pos, mObstacleGrid[x][y])) {
+                jump(boid)
+                mediumAccel.add(zeroVec(2))
+                continue
+            }
             var acc = maintainSpeed(3f, 0.9f, boid)
-            acc += avoidObstacles(50f, 0.2f, 20f, boid, mObstacleGrid[x][y])
+            acc += avoidObstacles(50f, 0.1f, 20f, boid, mObstacleGrid[x][y])
             acc += avoidBoids(60f, 0.1f, boid, mSmallBoidGrid[x][y])
             acc += avoidBoids(60f, 0.2f, boid, mMediumBoidGrid[x][y])
             acc += avoidBoids(120f, 0.2f, boid, mBigBoidGrid[x][y])
@@ -200,8 +213,13 @@ class Game(private val mContext: Context) {
                 bigAccel.add(zeroVec(2))
                 continue
             }
+            if (intersect(boid.pos, mObstacleGrid[x][y])) {
+                jump(boid)
+                bigAccel.add(zeroVec(2))
+                continue
+            }
             var acc = maintainSpeed(3f, 0.8f, boid)
-            acc += avoidObstacles(100f, 0.04f, 20f, boid, mObstacleGrid[x][y])
+            acc += avoidObstacles(100f, 0.02f, 20f, boid, mObstacleGrid[x][y])
             acc += avoidBoids(100f, 0.1f, boid, mBigBoidGrid[x][y])
             acc += averageNeighbor(200f, 0f, 0.5f, boid, mBigBoidGrid[x][y])
             bigAccel.add(acc)
@@ -304,14 +322,38 @@ class Game(private val mContext: Context) {
         }
     }
 
-    private fun maintainSpeed(gain: Float, target: Float, self: Boid): FloatArray {
-        val l = self.vel.length()
-        return gain * (target - l) * self.vel / l
+    private fun intersect(pos: FloatArray, obstacles: ArrayList<Obstacle>): Boolean {
+        for (o in obstacles) {
+            if (distanceSquared(pos, o.pos) < o.r * o.r)
+                return true
+        }
+        return false
     }
 
-    private fun capSpeed(gain: Float, target: Float, self: Boid): FloatArray {
+    private fun jump(boid: Boid) {
+        var dir = 10f * boid.vel.normalize()
+        for (i in 0 until 100) {
+            val pos = boid.pos + dir
+            dir = floatArrayOf(dir[0] * mJumpCos - dir[1] * mJumpSin, dir[0] * mJumpSin + dir[1] * mJumpCos)
+
+            val x = floor(pos[0] / kGridSize).toInt()
+            val y = floor(pos[1] / kGridSize).toInt()
+            if (x < 0 || x >= mGridWidth || y < 0 || y >= mGridHeight)
+                continue
+
+            if (intersect(pos, mObstacleGrid[x][y]))
+                continue
+
+            boid.pos = pos
+            boid.vel = dir.normalize()
+            boid.prevVel = boid.vel
+            boid.turn = 0f
+            return
+        }
+    }
+
+    private fun maintainSpeed(gain: Float, target: Float, self: Boid): FloatArray {
         val l = self.vel.length()
-        if (l < target) return zeroVec(self.vel.size)
         return gain * (target - l) * self.vel / l
     }
 
@@ -388,7 +430,7 @@ class Game(private val mContext: Context) {
         boid.turn += (turn - boid.turn) * (1f - exp(-5f * dt))
         boid.prevVel = dir
 
-        boid.turn = max(min(boid.turn, 4f), -4f)
+        boid.turn = max(min(boid.turn, 1f), -1f)
         boid.swim = min(boid.swim, 2f)
     }
 }

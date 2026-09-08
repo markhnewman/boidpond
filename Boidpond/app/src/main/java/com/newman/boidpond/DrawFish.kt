@@ -32,7 +32,7 @@ class DrawFish(private val mContext: Context) {
         mVertices.add(0f)
         for (i in 1 until n) {
             val x = 1f - (1f - i * dx).pow(2f)
-            val y = 0.3f * x * sqrt(1f - x)
+            val y = 0.3f * x.pow(1.5f) * sqrt(1f - x)
             mVertices.add(x - 0.75f)
             mVertices.add(y)
             mVertices.add(x - 0.75f)

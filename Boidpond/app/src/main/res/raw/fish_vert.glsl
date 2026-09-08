@@ -11,7 +11,7 @@ void main() {
     vec2 p = pos;
     float t = p.x * uTurn - 0.03 * uSwim * sin(uAnim * 6.2831853);
 
-    float swim = 0.1 * uSwim * smoothstep(0.25, -0.5, p.x);
+    float swim = 0.1 * uSwim * smoothstep(0.0, -0.5, p.x);
     float angle = (0.4 * p.x + uAnim) * 6.2831853;
     pos.y += swim * sin(angle);
     pos.x -= p.y * swim * cos(angle);
