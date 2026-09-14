@@ -15,5 +15,8 @@ data class Boid(
 data class Obstacle(
     var pos: FloatArray,
     var r: Float,
-    var color: FloatArray
-)
+    var color: FloatArray,
+    var targetR: Float
+) {
+    constructor(pos: FloatArray, r: Float, color: FloatArray) : this(pos, r, color, r)
+}

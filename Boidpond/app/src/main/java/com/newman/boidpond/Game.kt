@@ -40,11 +40,12 @@ class Game(private val mContext: Context) {
         mGridHeight = ceil(height / kGridSize).toInt()
 
         val spacing = 100f
+
         val smallCount = 300
         val mediumCount = 50
         val bigCount = 10
 /*
-        val smallCount = 1000
+        val smallCount = 800
         val mediumCount = 0
         val bigCount = 5
 */
@@ -99,7 +100,7 @@ class Game(private val mContext: Context) {
             mSmallBoids.add(Boid(
                 newBoid(width, height, mObstacleGrid),
                 randomUnitVec(2),
-                mix(floatArrayOf(0.5f, 0f, 0f), floatArrayOf(0.4f, 0.2f, 0f), Random.nextFloat())
+                mix(floatArrayOf(0.8f, 0f, 0f), floatArrayOf(1.0f, 0.3f, 0f), Random.nextFloat())
             ))
         }
 
@@ -108,7 +109,7 @@ class Game(private val mContext: Context) {
             mMediumBoids.add(Boid(
                 newBoid(width, height, mObstacleGrid),
                 randomUnitVec(2),
-                mix(floatArrayOf(0.9f, 0f, 0f), floatArrayOf(0.8f, 0.4f, 0f), Random.nextFloat())
+                mix(floatArrayOf(1.0f, 0.3f, 0f), floatArrayOf(1.0f, 0.6f, 0f), Random.nextFloat())
             ))
         }
 
@@ -117,7 +118,7 @@ class Game(private val mContext: Context) {
             mBigBoids.add(Boid(
                 newBoid(width, height, mObstacleGrid),
                 randomUnitVec(2),
-                mix(floatArrayOf(0.9f, 0.7f, 0f), floatArrayOf(1f, 0.9f, 0.6f), Random.nextFloat())
+                mix(floatArrayOf(1.0f, 0.8f, 0.0f), floatArrayOf(1.0f, 1.0f, 0.5f), Random.nextFloat())
             ))
         }
     }
@@ -139,12 +140,13 @@ class Game(private val mContext: Context) {
                 for (o in mObstacles) {
                     val sq = distanceSquared(pos, o.pos)
                     //good = good and (sq > max(r * r, o.r * o.r))
-                    good = good and (sq > 0.7f * max(r * r, o.r * o.r))
+                    good = good and (sq > 0.7f * max(r * r, o.targetR * o.targetR))
                 }
 
                 if (good) {
                     mObstacles[mCurrObstacle].pos = pos
-                    mObstacles[mCurrObstacle].r = r
+                    mObstacles[mCurrObstacle].targetR = r
+                    mObstacles[mCurrObstacle].r = 0f
                     mCurrObstacle = (mCurrObstacle + 1).mod(kMoveObstacles)
                     break
                 }
@@ -160,6 +162,10 @@ class Game(private val mContext: Context) {
         gridBoids(mMediumBoids, mMediumBoidGrid)
         gridBoids(mBigBoids, mBigBoidGrid)
         gridObstacles(mObstacles, mObstacleGrid)
+
+        for (o in mObstacles) {
+            o.r = min(o.r + 200f * dt, o.targetR)
+        }
 
         val smallAccel = ArrayList<FloatArray>()
         for (boid in mSmallBoids) {
@@ -244,10 +250,10 @@ class Game(private val mContext: Context) {
 
     fun draw(iMVPMatrix: FloatArray) {
         for (o in mObstacles) {
-            mDrawShapes.circle(o.pos[0], o.pos[1], o.r, floatArrayOf(0f, 0f, 0f))
+            mDrawShapes.circle(o.pos[0], o.pos[1], o.r, floatArrayOf(0.4f, 0.4f, 0.4f))
         }
         for (o in mObstacles) {
-            mDrawShapes.circle(o.pos[0], o.pos[1], o.r - 10f, o.color)
+            mDrawShapes.circle(o.pos[0], o.pos[1], o.r - 20f, o.color)
         }
         mDrawShapes.flush(iMVPMatrix)
 
@@ -344,8 +350,8 @@ class Game(private val mContext: Context) {
             if (intersect(pos, mObstacleGrid[x][y]))
                 continue
 
+            boid.vel = 4f * (pos - boid.pos).normalize()
             boid.pos = pos
-            boid.vel = dir.normalize()
             boid.prevVel = boid.vel
             boid.turn = 0f
             return

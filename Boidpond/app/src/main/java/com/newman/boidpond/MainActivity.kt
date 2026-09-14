@@ -36,7 +36,7 @@ class MainActivity : MyGLActivity() {
             mGame.touch(e.x, e.y)
         }
 
-        GLES20.glClearColor(0.6f, 0.8f, 1f, 1f)
+        GLES20.glClearColor(0.0f, 0.25f, 0.1f, 1f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
         mGame.advance(dt)
