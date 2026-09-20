@@ -9,7 +9,7 @@ import kotlin.math.*
 
 class DrawShapes(private val mContext: Context) {
 
-    private val kCircleResolution = 32
+    private val kCircleResolution = 8
     private val kCircleX = FloatArray(kCircleResolution)
     private val kCircleY = FloatArray(kCircleResolution)
     private val kFishX = ArrayList<Float>()

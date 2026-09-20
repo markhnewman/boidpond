@@ -8,6 +8,7 @@ import kotlin.random.Random
 class Game(private val mContext: Context) {
     private val mDrawShapes = DrawShapes(mContext)
     private val mDrawFish = DrawFish(mContext)
+    private val mDrawGround = DrawGround(mContext)
     private val mDrawTest = DrawTest(mContext)
     private var mWidth = 0
     private var mHeight = 0
@@ -17,7 +18,7 @@ class Game(private val mContext: Context) {
     private val mMediumBoids = ArrayList<Boid>()
     private val mBigBoids = ArrayList<Boid>()
     private val mObstacles = ArrayList<Obstacle>()
-    private val kMoveObstacles = 50
+    private val kMoveObstacles = 70
     private var mCurrObstacle = 0
 
     private val kGridSize = 200f
@@ -121,11 +122,14 @@ class Game(private val mContext: Context) {
                 mix(floatArrayOf(1.0f, 0.8f, 0.0f), floatArrayOf(1.0f, 1.0f, 0.5f), Random.nextFloat())
             ))
         }
+
+        mDrawGround.setSize(width, height)
     }
 
     fun glInit() {
         mDrawShapes.glInit()
         mDrawFish.glInit()
+        mDrawGround.glInit()
         mDrawTest.glInit()
     }
 
@@ -134,13 +138,13 @@ class Game(private val mContext: Context) {
             val touchPos = floatArrayOf(x[i], y[i])
             for (j in 0 until 20) {
                 val pos = touchPos + 50f * randomCircleVec(2)
-                val r = 75f * (0.5f + 0.5f * Random.nextFloat())
+                val r = 100 * (0.5f + 0.5f * Random.nextFloat())
 
                 var good = true
                 for (o in mObstacles) {
                     val sq = distanceSquared(pos, o.pos)
                     //good = good and (sq > max(r * r, o.r * o.r))
-                    good = good and (sq > 0.7f * max(r * r, o.targetR * o.targetR))
+                    good = good and (sq > 0.4f * max(r * r, o.targetR * o.targetR))
                 }
 
                 if (good) {
@@ -249,13 +253,13 @@ class Game(private val mContext: Context) {
     }
 
     fun draw(iMVPMatrix: FloatArray) {
-        for (o in mObstacles) {
+        /*for (o in mObstacles) {
             mDrawShapes.circle(o.pos[0], o.pos[1], o.r, floatArrayOf(0.4f, 0.4f, 0.4f))
         }
         for (o in mObstacles) {
             mDrawShapes.circle(o.pos[0], o.pos[1], o.r - 20f, o.color)
         }
-        mDrawShapes.flush(iMVPMatrix)
+        mDrawShapes.flush(iMVPMatrix)*/
 
         mDrawFish.start(iMVPMatrix)
         for (b in mSmallBoids) {
@@ -268,6 +272,8 @@ class Game(private val mContext: Context) {
             mDrawFish.draw(b, 100f)
         }
         mDrawFish.finish()
+
+        mDrawGround.draw(mObstacles, iMVPMatrix)
 
         /*mDrawTest.start(iMVPMatrix)
         mDrawTest.draw(floatArrayOf(0.5f * mWidth, 0.5f * mHeight), 400f, sin(0.5f * mTime).pow(3f), 0.6f, 1.0f * mTime)
