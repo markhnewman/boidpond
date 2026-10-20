@@ -64,4 +64,10 @@ class GLProgram(iVertexShaderRes: Int, iFragmentShaderRes: Int, iContext: Contex
     fun attribLocation(name: String): Int {
         return GLES20.glGetAttribLocation(mProgram, name)
     }
+
+    fun useTexture(uniformName: String, texture: GLTexture, textureUnit: Int = -1) {
+        val textureLoc = GLES20.glGetUniformLocation(mProgram, uniformName)
+        texture.use(textureUnit)
+        GLES20.glUniform1i(textureLoc, texture.unit)
+    }
 }

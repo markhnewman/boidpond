@@ -5,11 +5,12 @@ import kotlin.collections.ArrayList
 import kotlin.math.*
 import kotlin.random.Random
 
-class Game(private val mContext: Context) {
-    private val mDrawShapes = DrawShapes(mContext)
-    private val mDrawFish = DrawFish(mContext)
-    private val mDrawGround = DrawGround(mContext)
-    private val mDrawTest = DrawTest(mContext)
+class Game(iContext: Context) {
+    private val mDrawShapes = DrawShapes(iContext)
+    private val mDrawFish = DrawFish(iContext)
+    private val mDrawGround = DrawGround(iContext)
+    private val mDrawTest = DrawTest(iContext)
+    private val mObstacleGround = ObstacleGround()
     private var mWidth = 0
     private var mHeight = 0
     private var mTime = 0f
@@ -18,7 +19,7 @@ class Game(private val mContext: Context) {
     private val mMediumBoids = ArrayList<Boid>()
     private val mBigBoids = ArrayList<Boid>()
     private val mObstacles = ArrayList<Obstacle>()
-    private val kMoveObstacles = 70
+    private val kMoveObstacles = 60
     private var mCurrObstacle = 0
 
     private val kGridSize = 200f
@@ -32,7 +33,7 @@ class Game(private val mContext: Context) {
     private val mJumpCos = 1.1f * cos(2.4f)
     private val mJumpSin = 1.1f * sin(2.4f)
 
-    fun setSize(width: Int, height: Int) {
+    fun setSize(width: Int, height: Int, iMVPMatrix: FloatArray) {
         if (width == mWidth && height == mHeight) return
         mWidth = width
         mHeight = height
@@ -123,7 +124,7 @@ class Game(private val mContext: Context) {
             ))
         }
 
-        mDrawGround.setSize(width, height)
+        mObstacleGround.setSize(width, height, iMVPMatrix)
     }
 
     fun glInit() {
@@ -168,7 +169,7 @@ class Game(private val mContext: Context) {
         gridObstacles(mObstacles, mObstacleGrid)
 
         for (o in mObstacles) {
-            o.r = min(o.r + 200f * dt, o.targetR)
+            o.r = min(o.r + 500f * dt, o.targetR)
         }
 
         val smallAccel = ArrayList<FloatArray>()
@@ -273,7 +274,12 @@ class Game(private val mContext: Context) {
         }
         mDrawFish.finish()
 
-        mDrawGround.draw(mObstacles, iMVPMatrix)
+        val (plants, rocks) = mObstacleGround.draw(mObstacles)
+
+        mDrawGround.start(iMVPMatrix)
+        mDrawGround.drawRocks(rocks)
+        mDrawGround.drawPlants(plants)
+        mDrawGround.finish()
 
         /*mDrawTest.start(iMVPMatrix)
         mDrawTest.draw(floatArrayOf(0.5f * mWidth, 0.5f * mHeight), 400f, sin(0.5f * mTime).pow(3f), 0.6f, 1.0f * mTime)

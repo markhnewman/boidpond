@@ -25,7 +25,7 @@ class MainActivity : MyGLActivity() {
 
         GLES20.glViewport(0, 0, iWidth, iHeight)
 
-        mGame.setSize(iWidth, iHeight)
+        mGame.setSize(iWidth, iHeight, mProjectionMatrix)
     }
 
     override fun draw(iEvents: ArrayList<MyGLTouchEvent>) {
