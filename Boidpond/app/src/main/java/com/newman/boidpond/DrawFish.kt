@@ -97,7 +97,7 @@ class DrawFish(private val mContext: Context) {
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, mElementBuffer)
         GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, indexSize, indices, GLES20.GL_STATIC_DRAW)
 
-        GLES20.glEnableVertexAttribArray(mPositionLoc) // This apparently has to come after glBufferData!!!
+        GLES20.glEnableVertexAttribArray(mPositionLoc) // This apparently has to come after glBufferData!
         GLES20.glVertexAttribPointer(mPositionLoc, 2, GLES20.GL_FLOAT, false, 2 * 4, 0)
     }
 

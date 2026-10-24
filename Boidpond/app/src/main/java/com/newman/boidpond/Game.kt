@@ -1,6 +1,7 @@
 package com.newman.boidpond
 
 import android.content.Context
+import android.opengl.GLES20
 import kotlin.collections.ArrayList
 import kotlin.math.*
 import kotlin.random.Random
@@ -254,6 +255,9 @@ class Game(iContext: Context) {
     }
 
     fun draw(iMVPMatrix: FloatArray) {
+        GLES20.glClearColor(0.0f, 0.2f, 0.1f, 1f)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+
         /*for (o in mObstacles) {
             mDrawShapes.circle(o.pos[0], o.pos[1], o.r, floatArrayOf(0.4f, 0.4f, 0.4f))
         }

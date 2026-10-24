@@ -103,6 +103,12 @@ class ObstacleGround {
                                          0f,    0f,   1f, 0f,
                                          0f,    0f,   0f, 1f)
             Matrix.multiplyMM(c.matrix, 0, c.matrix, 0, dirMatrix, 0)
+
+            val posMatrix = floatArrayOf(2f,  0f,  0f, 0f,
+                                         0f,  2f,  0f, 0f,
+                                         0f,  0f,  1f, 0f,
+                                         -1f, -1f, 0f, 1f)
+            Matrix.multiplyMM(c.matrix, 0, c.matrix, 0, posMatrix, 0)
         }
 
     }

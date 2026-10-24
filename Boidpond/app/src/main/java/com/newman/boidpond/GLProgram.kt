@@ -8,16 +8,18 @@ class GLProgram(iVertexShaderRes: Int, iFragmentShaderRes: Int, iContext: Contex
     private val mProgram: Int
 
     init {
+        val vertexShaderName = iContext.getResources().getResourceEntryName(iVertexShaderRes)
         val vertexShaderFile = iContext.getResources().openRawResource(iVertexShaderRes)
         val vertexShaderCode = vertexShaderFile.bufferedReader().use { it.readText() }
 
+        val fragmentShaderName = iContext.getResources().getResourceEntryName(iFragmentShaderRes)
         val fragmentShaderFile = iContext.getResources().openRawResource(iFragmentShaderRes)
         val fragmentShaderCode = fragmentShaderFile.bufferedReader().use { it.readText() }
 
         val vertexShader = compileShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode)
-        mProgram = if (getCompileStatus(vertexShader, "Vertex shader")) {
+        mProgram = if (getCompileStatus(vertexShader, "Vertex shader \"$vertexShaderName\"")) {
             val fragmentShader = compileShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode)
-            if (getCompileStatus(fragmentShader, "Fragment shader")) {
+            if (getCompileStatus(fragmentShader, "Fragment shader \"$fragmentShaderName\"")) {
                 linkProgram(vertexShader, fragmentShader)
             } else {
                 0
